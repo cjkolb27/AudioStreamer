@@ -10,17 +10,20 @@ class AudioStreamer(QtCore.QObject):
         super().__init__()
         self.running = False
 
-    def start(self, hostname, port):
+    def start(self, hostname, port, sc):
         print(f"Starting stream to {hostname}:{port}")
         self.running = True
         self.status_changed.emit(f"Running → {hostname}:{port}")
         with open((Path(__file__).parent / "Data" / "info.txt"), "w", newline='') as info:
-            info.write(f"{hostname}\r\n{port}\r\n")
+            info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n")
 
     def stop(self):
         print("Stopping stream")
         self.running = False
         self.status_changed.emit("Stopped")
+
+    def flipflop(self, state: bool):
+        print("Flipped")
 
 # ------------------------------------------------------------------
 class MainWindow(QtWidgets.QWidget):
@@ -36,17 +39,31 @@ class MainWindow(QtWidgets.QWidget):
         self.port_spin = QtWidgets.QSpinBox()
         self.port_spin.setRange(1, 65535)
         self.port_spin.setValue(1)
+        self.serverclient = "True"
         with open((Path(__file__).parent / "Data" / "info.txt"), "r", newline='') as info:
-            self.ip_edit  = QtWidgets.QLineEdit(info.readline().replace("\r\n", ""))
+            self.ip_edit = QtWidgets.QLineEdit(info.readline().replace("\r\n", ""))
             self.port_spin.setValue(int(info.readline()))
+            serverclient = info.readline().replace("\r\n", "")
 
         self.status_lbl = QtWidgets.QLabel("Stopped")
 
+        server_btn = QtWidgets.QPushButton("Server")
+        server_btn.setCheckable(True)
+        server_btn.setFixedSize(130, 40)
+        client_btn = QtWidgets.QPushButton("Client")
+        client_btn.setCheckable(True)
+        client_btn.setFixedSize(130, 40)
         start_btn = QtWidgets.QPushButton("Start")
         stop_btn  = QtWidgets.QPushButton("Stop")
 
+        group = QtWidgets.QButtonGroup(self)
+        group.setExclusive(True)
+        group.addButton(server_btn, 1)
+        group.addButton(client_btn, 2)
+
         # Layout
         form_layout = QtWidgets.QFormLayout()
+        form_layout.addRow(server_btn, client_btn)
         form_layout.addRow(ip_label, self.ip_edit)
         form_layout.addRow(port_label, self.port_spin)
 
@@ -60,9 +77,14 @@ class MainWindow(QtWidgets.QWidget):
         main_layout.addLayout(btn_layout)
 
         # Connections
+        server_btn.toggled.connect(self.streamer.flipflop)
         start_btn.clicked.connect(self.on_start)
         stop_btn.clicked.connect(self.streamer.stop)
         self.streamer.status_changed.connect(self.status_lbl.setText)
+        if serverclient == "True":
+            server_btn.setChecked(True)
+        else:
+            client_btn.setChecked(True)
 
     def on_start(self):
         if self.streamer.running:
@@ -70,7 +92,8 @@ class MainWindow(QtWidgets.QWidget):
             return
         dest_ip = self.ip_edit.text()
         dest_port = self.port_spin.value()
-        self.streamer.start(dest_ip, dest_port)
+        sc = self.serverclient
+        self.streamer.start(dest_ip, dest_port, sc)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
