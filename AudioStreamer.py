@@ -209,8 +209,8 @@ def tryConnect(server, host, port):
 if __name__ == "__main__":
     End = [True]
     End[0] = False
-    rate = 48000
-    channels = 2
+    rate = 44100
+    channels = 1
     blocksize = 1024
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
