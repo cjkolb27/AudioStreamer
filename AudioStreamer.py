@@ -153,17 +153,21 @@ def tryConnect(server, host, port):
         print(f"{host} {port}")
         serverSocket.bind((host, port))
         serverSocket.listen(1)
-        connId, addr = serverSocket.accept()
         print("Listening for client")
+        connId, addr = serverSocket.accept()
+        print("Found client")
         
         pa = pyaudio.PyAudio()
         stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, frames_per_buffer=1024)
+        print("Created stream")
 
         try:
-            while End[0]:
+            while not End[0]:
                 data = stream.read(1024, exception_on_overflow=False)
                 connId.sendall(struct.pack('>I', len(data)) + data)
-        except Exception:
+                print(data)
+        except Exception as e:
+            print(e)
             pass
         
         stream.stop_stream()
@@ -184,7 +188,7 @@ def tryConnect(server, host, port):
         stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, frames_per_buffer=1024)
 
         try:
-            while End[0]:
+            while not End[0]:
 
                 read = clientSocket.recv(4)
                 if not read:
@@ -196,6 +200,7 @@ def tryConnect(server, host, port):
                     if not packet:
                         raise RuntimeError("Socket closed prematurely")
                     data += packet
+                    print(data)
 
                 stream.write(data)
         except Exception:
