@@ -68,10 +68,8 @@ class MainWindow(QtWidgets.QWidget):
         p.terminate()
 
         pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, input_device_index=3, frames_per_buffer=1024)
+        print(pa.get_device_info_by_index(3))
         pa.terminate()
-        stream.stop_stream()
-        stream.close()
 
         self.server_btn = QtWidgets.QPushButton("Server")
         self.server_btn.setCheckable(True)
