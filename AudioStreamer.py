@@ -60,6 +60,13 @@ class MainWindow(QtWidgets.QWidget):
 
         self.status_lbl = QtWidgets.QLabel("Stopped")
 
+        p = pyaudio.PyAudio()
+        for i in range(p.get_device_count()):
+            dev = p.get_device_info_by_index(i)
+            print(f"Index: {i}, Name: {dev['name']}, Host API: {dev['hostApi']}")
+
+        p.terminate()
+
         self.server_btn = QtWidgets.QPushButton("Server")
         self.server_btn.setCheckable(True)
         self.server_btn.setFixedSize(130, 40)
@@ -174,7 +181,7 @@ def tryConnect(server, host, port):
         print("Server found")
 
         pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, frames_per_buffer=1024)
+        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, frames_per_buffer=1024)
 
         try:
             while End[0]:
