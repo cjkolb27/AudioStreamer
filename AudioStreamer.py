@@ -165,7 +165,6 @@ def tryConnect(server, host, port):
             while not End[0]:
                 data = stream.read(1024, exception_on_overflow=False)
                 connId.sendall(struct.pack('>I', len(data)) + data)
-                print(data)
         except Exception as e:
             print(e)
             pass
@@ -175,6 +174,7 @@ def tryConnect(server, host, port):
         pa.terminate()
         connId.close()
         serverSocket.close()
+        print("Server closed connections")
     else:
         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Looking for server")
@@ -200,7 +200,6 @@ def tryConnect(server, host, port):
                     if not packet:
                         raise RuntimeError("Socket closed prematurely")
                     data += packet
-                    print(data)
 
                 stream.write(data)
         except Exception:
@@ -209,6 +208,7 @@ def tryConnect(server, host, port):
         stream.close()
         pa.terminate()
         clientSocket.close()
+        print("Client closed connections")
     return
 
 if __name__ == "__main__":
