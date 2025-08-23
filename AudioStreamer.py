@@ -191,7 +191,7 @@ def tryConnect(server, host, port):
         print("Server found")
 
         pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, frames_per_buffer=1024)
+        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, output_device_index=18, frames_per_buffer=1024)
 
         try:
             while not End[0]:
