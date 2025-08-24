@@ -6,7 +6,7 @@ device_name = "CABLE Output (VB-Audio Virtual Cable), Windows WASAPI"
 TARGET_IP   = socket.gethostbyname("Beefy-PC")   # <-- change to receiver's IP
 TARGET_PORT = 2828            # must match the receiver
 CHUNK_SIZE  = 1024             # frames per block (≈ 23 ms @ 44.1 kHz)
-FORMAT      = np.int16
+FORMAT      = np.float32
 
 # ------------------------------------------------------------------
 # 1️⃣  Create a UDP socket once – no connect() needed
@@ -27,10 +27,10 @@ def audio_callback(indata, frames, time, status):
 # ------------------------------------------------------------------
 with sd.InputStream(samplerate=48000,
                     blocksize=CHUNK_SIZE,
-                    dtype="int16",
-                    channels=1,
+                    dtype="float32",
+                    channels=2,
                     device=device_name,
-                    callback=audio_callback):
+                    callback=audio_callback, latency="low"):
     print(f"Streaming to {TARGET_IP}:{TARGET_PORT} …")
     try:
         while True:                # keep the main thread alive
