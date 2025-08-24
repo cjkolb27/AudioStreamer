@@ -219,7 +219,7 @@ if __name__ == "__main__":
     End = [True]
     End[0] = False
     rate = 44100
-    channels = 2
+    channels = 8
     blocksize = 1024
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
