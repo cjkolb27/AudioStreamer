@@ -20,12 +20,12 @@ class AudioStreamer(QtCore.QObject):
         with open((Path(__file__).parent / "Data" / "info.txt"), "w", newline='') as info:
             info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n{inputString}\r\n")
 
-    def start(self, hostname, port, sc):
+    def start(self, hostname, port, sc, inputString):
         print(f"Starting stream to {hostname}:{port}")
         self.running = True
         self.status_changed.emit(f"Running → {hostname}:{port}")
         with open((Path(__file__).parent / "Data" / "info.txt"), "w", newline='') as info:
-            info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n")
+            info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n{inputString}\r\n")
 
     def stop(self):
         print("Stopping stream")
@@ -146,7 +146,7 @@ class MainWindow(QtWidgets.QWidget):
         dest_hostname = self.hostname_edit.text()
         dest_port = self.port_spin.value()
         sc = self.serverclient
-        self.streamer.start(dest_hostname, dest_port, sc)
+        self.streamer.start(dest_hostname, dest_port, sc, self.inputString)
         if self.serverclient == "True":
             self.client_btn.setEnabled(False)
             self.thread = threading.Thread(target=tryConnect, args=(True, socket.gethostname(), int(dest_port)))
