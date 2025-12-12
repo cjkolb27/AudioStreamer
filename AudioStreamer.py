@@ -158,38 +158,45 @@ class MainWindow(QtWidgets.QWidget):
 
 def tryConnect(server, host, port, input):
     print("Thread Started")
+    End[0] = False
     if server:
+        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(f"{host} {port}")
+        def talkToClient(conn):
+            print("Found client")
+            pa = pyaudio.PyAudio()
+            stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
+            print("Created stream")
+
+            try:
+                while not End[0]:
+                    data = stream.read(1024, exception_on_overflow=False)
+                    conn.sendall(struct.pack('>I', len(data)) + data)
+            except Exception as e:
+                print(e)
+                pass
+            
+            stream.stop_stream()
+            stream.close()
+            pa.terminate()
+            conn.close()
+            
+            print("Server closed connections")
+            return
+        serverSocket.bind((host, port))
+        serverSocket.settimeout(1.0)
+        serverSocket.listen()
+        print("Listening for client")
         while not End[0]:
             try:
-                serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                print(f"{host} {port}")
-                serverSocket.bind((host, port))
-                serverSocket.listen(1)
-                print("Listening for client")
                 connId, addr = serverSocket.accept()
-                print("Found client")
-                
-                pa = pyaudio.PyAudio()
-                stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
-                print("Created stream")
-
-                try:
-                    while not End[0]:
-                        data = stream.read(1024, exception_on_overflow=False)
-                        connId.sendall(struct.pack('>I', len(data)) + data)
-                except Exception as e:
-                    print(e)
-                    pass
-                
-                stream.stop_stream()
-                stream.close()
-                pa.terminate()
-                connId.close()
-                serverSocket.close()
-                print("Server closed connections")
+                talkToClient(connId)
+            except socket.timeout:
+                continue
             except OSError:
                 print("OS Error")
-                break
+        serverSocket.close()
+        print("Server Shutdown")
     else:
         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Looking for server")
