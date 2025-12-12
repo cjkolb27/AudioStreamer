@@ -68,7 +68,7 @@ class MainWindow(QtWidgets.QWidget):
         p.terminate()
 
         pa = pyaudio.PyAudio()
-        print(pa.get_device_info_by_index(3))
+        print(pa.get_device_info_by_index(input))
         pa.terminate()
 
         self.server_btn = QtWidgets.QPushButton("Server")
@@ -162,7 +162,7 @@ def tryConnect(server, host, port):
         print("Found client")
         
         pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=3, frames_per_buffer=1024)
+        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
         print("Created stream")
 
         try:
@@ -189,7 +189,7 @@ def tryConnect(server, host, port):
         print("Server found")
 
         pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, output_device_index=18, frames_per_buffer=1024)
+        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, output=True, output_device_index=input, frames_per_buffer=1024)
 
         try:
             while not End[0]:
@@ -219,8 +219,9 @@ if __name__ == "__main__":
     End = [True]
     End[0] = False
     rate = 44100
-    channels = 8
+    channels = 2
     blocksize = 1024
+    input = 14
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
     win = MainWindow(streamer)
