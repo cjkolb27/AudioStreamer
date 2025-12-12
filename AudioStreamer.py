@@ -54,6 +54,7 @@ class MainWindow(QtWidgets.QWidget):
         self.port_spin.setValue(1)
         self.serverclient = "True"
         self.inputString = ""
+        self.input = 0
         with open((Path(__file__).parent / "Data" / "info.txt"), "r", newline='') as info:
             self.hostname_edit = QtWidgets.QLineEdit(info.readline().replace("\r\n", ""))
             self.port_spin.setValue(int(info.readline()))
@@ -67,13 +68,13 @@ class MainWindow(QtWidgets.QWidget):
         for i in range(p.get_device_count()):
             dev = p.get_device_info_by_index(i)
             if self.inputString in dev['name'] and dev['hostApi'] == 0:
-                input = i
+                self.input = i
             print(f"Index: {i}, Name: {dev['name']}, Host API: {dev['hostApi']}")
 
         p.terminate()
 
         pa = pyaudio.PyAudio()
-        print(pa.get_device_info_by_index(input))
+        print(pa.get_device_info_by_index(self.input))
         pa.terminate()
 
         self.server_btn = QtWidgets.QPushButton("Server")
@@ -149,41 +150,46 @@ class MainWindow(QtWidgets.QWidget):
         self.streamer.start(dest_hostname, dest_port, sc, self.inputString)
         if self.serverclient == "True":
             self.client_btn.setEnabled(False)
-            self.thread = threading.Thread(target=tryConnect, args=(True, socket.gethostname(), int(dest_port)))
+            self.thread = threading.Thread(target=tryConnect, args=(True, socket.gethostname(), int(dest_port), int(self.input)))
         else:
             self.server_btn.setEnabled(False)
-            self.thread = threading.Thread(target=tryConnect, args=(False, dest_hostname, int(dest_port)))
+            self.thread = threading.Thread(target=tryConnect, args=(False, dest_hostname, int(dest_port), int(self.input)))
         self.thread.start()
 
-def tryConnect(server, host, port):
+def tryConnect(server, host, port, input):
     print("Thread Started")
     if server:
-        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print(f"{host} {port}")
-        serverSocket.bind((host, port))
-        serverSocket.listen(1)
-        print("Listening for client")
-        connId, addr = serverSocket.accept()
-        print("Found client")
-        
-        pa = pyaudio.PyAudio()
-        stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
-        print("Created stream")
+        while not End[0]:
+            try:
+                serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                print(f"{host} {port}")
+                serverSocket.bind((host, port))
+                serverSocket.listen(1)
+                print("Listening for client")
+                connId, addr = serverSocket.accept()
+                print("Found client")
+                
+                pa = pyaudio.PyAudio()
+                stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
+                print("Created stream")
 
-        try:
-            while not End[0]:
-                data = stream.read(1024, exception_on_overflow=False)
-                connId.sendall(struct.pack('>I', len(data)) + data)
-        except Exception as e:
-            print(e)
-            pass
-        
-        stream.stop_stream()
-        stream.close()
-        pa.terminate()
-        connId.close()
-        serverSocket.close()
-        print("Server closed connections")
+                try:
+                    while not End[0]:
+                        data = stream.read(1024, exception_on_overflow=False)
+                        connId.sendall(struct.pack('>I', len(data)) + data)
+                except Exception as e:
+                    print(e)
+                    pass
+                
+                stream.stop_stream()
+                stream.close()
+                pa.terminate()
+                connId.close()
+                serverSocket.close()
+                print("Server closed connections")
+            except OSError:
+                print("OS Error")
+                break
     else:
         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Looking for server")
@@ -226,7 +232,6 @@ if __name__ == "__main__":
     rate = 44100
     channels = 2
     blocksize = 1024
-    input = 9
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
     win = MainWindow(streamer)
