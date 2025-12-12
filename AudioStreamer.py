@@ -16,9 +16,9 @@ class AudioStreamer(QtCore.QObject):
         super().__init__()
         self.running = False
     
-    def writeSettings(self, hostname, port, sc):
+    def writeSettings(self, hostname, port, sc, inputString):
         with open((Path(__file__).parent / "Data" / "info.txt"), "w", newline='') as info:
-            info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n")
+            info.write(f"{hostname}\r\n{port}\r\n{sc}\r\n{inputString}\r\n")
 
     def start(self, hostname, port, sc):
         print(f"Starting stream to {hostname}:{port}")
@@ -53,16 +53,21 @@ class MainWindow(QtWidgets.QWidget):
         self.port_spin.setRange(1, 65535)
         self.port_spin.setValue(1)
         self.serverclient = "True"
+        self.inputString = ""
         with open((Path(__file__).parent / "Data" / "info.txt"), "r", newline='') as info:
             self.hostname_edit = QtWidgets.QLineEdit(info.readline().replace("\r\n", ""))
             self.port_spin.setValue(int(info.readline()))
             self.serverclient = info.readline().replace("\r\n", "")
+            self.inputString = info.readline().replace("\r\n", "")
+            print(self.inputString)
 
         self.status_lbl = QtWidgets.QLabel("Stopped")
 
         p = pyaudio.PyAudio()
         for i in range(p.get_device_count()):
             dev = p.get_device_info_by_index(i)
+            if self.inputString in dev['name'] and dev['hostApi'] == 0:
+                input = i
             print(f"Index: {i}, Name: {dev['name']}, Host API: {dev['hostApi']}")
 
         p.terminate()
@@ -121,7 +126,7 @@ class MainWindow(QtWidgets.QWidget):
         else:
             self.serverclient = "False"
             self.hostname_edit.setEnabled(True)
-        self.streamer.writeSettings(dest_ip, dest_port, self.serverclient)
+        self.streamer.writeSettings(dest_ip, dest_port, self.serverclient, self.inputString)
     
     def on_stop(self):
         self.start_btn.setEnabled(True)
@@ -221,7 +226,7 @@ if __name__ == "__main__":
     rate = 44100
     channels = 2
     blocksize = 1024
-    input = 14
+    input = 9
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
     win = MainWindow(streamer)
