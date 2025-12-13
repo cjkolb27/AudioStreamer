@@ -1,2 +1,5 @@
 Data/*
 .venv/*
+AudioStreamer.spec
+build/*
+dist/*

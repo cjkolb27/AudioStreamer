@@ -1,10 +1,8 @@
 import sys
 import socket
 import threading
-import os
 from PyQt5 import QtWidgets, QtCore
 from pathlib import Path
-import numpy
 import struct
 import pyaudio
 
