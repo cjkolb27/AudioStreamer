@@ -163,26 +163,29 @@ def tryConnect(server, host, port, input):
         serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print(f"{host} {port}")
         def talkToClient(conn):
-            print("Found client")
-            pa = pyaudio.PyAudio()
-            stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
-            print("Created stream")
-
             try:
-                while not End[0]:
-                    data = stream.read(1024, exception_on_overflow=False)
-                    conn.sendall(struct.pack('>I', len(data)) + data)
-            except Exception as e:
-                print(e)
-                pass
+                print("Found client")
+                pa = pyaudio.PyAudio()
+                stream = pa.open(format=pyaudio.paInt16, channels=channels, rate=rate, input=True, input_device_index=input, frames_per_buffer=1024)
+                print("Created stream")
+
+                try:
+                    while not End[0]:
+                        data = stream.read(1024, exception_on_overflow=False)
+                        conn.sendall(struct.pack('>I', len(data)) + data)
+                except Exception as e:
+                    print(e)
+                    pass
+                
+                stream.stop_stream()
+                stream.close()
+                pa.terminate()
+                
+                print("Server closed connections")
+            finally:
+                conn.close()
+                return
             
-            stream.stop_stream()
-            stream.close()
-            pa.terminate()
-            conn.close()
-            
-            print("Server closed connections")
-            return
         serverSocket.bind((host, port))
         serverSocket.settimeout(1.0)
         serverSocket.listen()
@@ -190,7 +193,11 @@ def tryConnect(server, host, port, input):
         while not End[0]:
             try:
                 connId, addr = serverSocket.accept()
-                talkToClient(connId)
+                threading.Thread(
+                    target=talkToClient,
+                    args=(connId,),
+                    daemon=True
+                ).start()
             except socket.timeout:
                 continue
             except OSError:
@@ -238,7 +245,7 @@ if __name__ == "__main__":
     End[0] = False
     rate = 44100
     channels = 2
-    blocksize = 1024
+    blocksize = 128
     app = QtWidgets.QApplication(sys.argv)
     streamer = AudioStreamer()
     win = MainWindow(streamer)
